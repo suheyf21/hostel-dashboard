@@ -18,3 +18,4 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ZAINAB_NAJJASHI_FEMALE_HOSTEL }}'
           channelId: live
           projectId: zainab-najjashi-female-hostel
+          
