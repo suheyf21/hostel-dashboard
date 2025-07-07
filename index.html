@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zainnab Najjashi Female Hostel</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <!-- Add Firestore -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <div class="login-screen" id="loginScreen">
+    <img src="logo.png" alt="Hostel Logo" class="logo" />
+    <h2>Login</h2>
+    <div class="login-form" style="transition:all 0.3s;max-width:350px;margin:auto;">
+      <input type="text" id="loginEmail" placeholder="Enter your email" style="width:100%;margin-bottom:10px;padding:10px;transition:box-shadow 0.2s;" />
+      <input type="password" id="loginPassword" placeholder="Enter your password" style="width:100%;margin-bottom:10px;padding:10px;transition:box-shadow 0.2s;" />
+      <select id="loginRole" style="width:100%;margin-bottom:10px;padding:10px;transition:box-shadow 0.2s;">
+        <option value="">Select Role</option>
+        <option value="Managing Director">Managing Director</option>
+        <option value="Secretary">Secretary</option>
+        <option value="CEO">CEO</option>
+      </select>
+      <button onclick="login()" style="width:100%;padding:12px;background:#b08d57;color:#fff;border:none;border-radius:5px;font-size:1.1em;transition:background 0.2s;">Login</button>
+      <div id="loginError" style="color:red;margin-top:10px;min-height:24px;transition:color 0.2s;"></div>
+    </div>
+  </div>
+
+  <div class="dashboard" id="dashboard" style="display: none;">
+    <div class="sidebar">
+      <div class="site-name">🏠 Zainab Najjashi Hostel</div>
+      <div class="profile-section">
+        <img src="avatar.png" alt="User Avatar" class="avatar" />
+        <div class="user-name">Umar Abubakar</div>
+      </div>
+      <ul class="nav-links">
+        <li class="active"><a href="#" onclick="showDashboard()">Dashboard</a></li>
+        <li><a href="#" onclick="showWorkers()">Workers Management</a></li>
+        <li><a href="#" onclick="showServiceProviders()">Service Provider Directory</a></li>
+        <li><a href="#" onclick="showTenantWaitingList()">Tenant Waiting List</a></li>
+        <li><a href="#" onclick="showGuardianSection()">Tenants Guardians</a></li>
+        <li><a href="#" onclick="document.getElementById('uploadModal').style.display='block'">Documents Archive</a></li>
+      </ul>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+  <div id="viewOnlyBanner" style="display:none;background:#ffe0b2;color:#b08d57;padding:10px 16px;text-align:center;font-weight:bold;">View-Only Mode: CEO Access</div>
+    </div>
+
+    <div class="main-content">
+    <div id="dashboardContent">
+      <div id="guardianDashboard" style="display:none;">
+        <h2>Room Guardians Directory</h2>
+        <form id="guardianForm" onsubmit="saveGuardian(event)" style="margin-bottom:20px;">
+          <input type="hidden" id="guardianEditIndex" />
+          <select id="guardianRoom" required style="margin-bottom:5px;" onchange="renderGuardianInputs()">
+            <option value="">Select Room</option>
+          </select>
+          <div id="guardianInputs"></div>
+          <button type="submit">Save</button>
+        </form>
+        <h3>Guardians by Room</h3>
+        <div style="margin-bottom:10px;">
+          <input type="text" id="guardianTenantSearch" placeholder="Search by tenant name" style="width:250px;max-width:100%;margin-bottom:10px;" onkeyup="renderGuardianTable()" />
+        </div>
+        <table border="1" cellpadding="4" style="width:100%;margin-bottom:20px;">
+          <thead>
+            <tr>
+              <th>Room</th><th>Guardian Name</th><th>Phone 1</th><th>Phone 2</th><th>Address</th><th>Occupants</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="guardianTableBody"></tbody>
+        </table>
+      </div>
+      <div id="tenantWaitingListDashboard" style="display:none;">
+        <h2>Tenant Waiting List</h2>
+        <form id="tenantWaitingForm" onsubmit="saveTenantWaiting(event)" style="margin-bottom:20px;">
+          <input type="hidden" id="tenantWaitingEditIndex" />
+          <input type="text" id="waitingName" placeholder="Name" required style="margin-bottom:5px;" />
+          <input type="text" id="waitingPhone" placeholder="Phone Number" required style="margin-bottom:5px;" />
+          <input type="text" id="waitingRoom" placeholder="Preferred Room" required style="margin-bottom:5px;" />
+          <input type="date" id="waitingDate" placeholder="Application Date" required style="margin-bottom:5px;" />
+          <button type="submit">Save</button>
+        </form>
+        <h3>Waiting List</h3>
+        <table border="1" cellpadding="4" style="width:100%;margin-bottom:20px;">
+          <thead>
+            <tr>
+              <th>Name</th><th>Phone Number</th><th>Preferred Room</th><th>Application Date</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tenantWaitingTableBody"></tbody>
+        </table>
+      </div>
+      <!-- Dashboard content will be shown here (default) -->
+      <div id="serviceProvidersDashboard" style="display:none;">
+        <h2>Service Provider Directory</h2>
+        <form id="serviceProviderForm" onsubmit="saveServiceProvider(event)" style="margin-bottom:20px;">
+          <input type="hidden" id="serviceProviderEditIndex" />
+          <input type="text" id="providerName" placeholder="Name" required style="margin-bottom:5px;" />
+          <input type="text" id="providerPhone" placeholder="Phone Number" required style="margin-bottom:5px;" />
+          <input type="text" id="providerType" placeholder="Type of Work (e.g. Plumber, Electrician)" required style="margin-bottom:5px;" />
+          <button type="submit">Save</button>
+        </form>
+        <h3>Saved Contacts</h3>
+        <table border="1" cellpadding="4" style="width:100%;margin-bottom:20px;">
+          <thead>
+            <tr>
+              <th>Name</th><th>Phone Number</th><th>Type of Work</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="serviceProvidersTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Modal for uploading documents -->
+<div id="uploadModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+  <div style="background:#fff; padding:30px; border-radius:8px; max-width:400px; margin:auto; position:relative; top:10vh;">
+    <h3>Upload Scan Document</h3>
+    <input type="file" id="docFile" accept="application/pdf,image/*" style="margin-bottom:10px;" />
+    <input type="text" id="docDesc" placeholder="Description (optional)" style="width:100%; margin-bottom:10px;" />
+    <button onclick="uploadDocument()">Upload</button>
+    <button onclick="document.getElementById('uploadModal').style.display='none'" style="margin-left:10px;">Cancel</button>
+    <div id="uploadStatus" style="margin-top:10px; color:green;"></div>
+    <h4 style="margin-top:20px;">Uploaded Documents</h4>
+    <ul id="uploadedDocs" style="max-height:120px; overflow:auto; font-size:0.95em;"></ul>
+  </div>
+</div>
+      <div id="mainDashboard">
+        <img src="logo.png" alt="Hostel Logo" class="logo" />
+        <h1 id="welcomeText">WELCOME!!!</h1>
+
+        <div class="summary">
+          <div>Total Income: <span id="totalIncome">₦0</span></div>
+          <div>Total Expenses: <span id="totalExpense">₦0</span></div>
+          <div>Balance: <span id="balance">₦0</span></div>
+        </div>
+
+        <div class="room-controls">
+          <input type="text" id="roomSearch" placeholder="Search by room number, tenant name, or type" onkeyup="filterRooms()">
+        </div>
+
+        <div class="export-controls">
+          <button id="exportPayments" onclick="exportPayments()">Export Payments</button>
+          <button id="exportExpenses" onclick="exportExpenses()">Export Expenses</button>
+        </div>
+
+        <div class="room-list" id="roomList"></div>
+
+        <div class="form-section">
+          <h2>Record Expense</h2>
+          <input type="text" id="expenseDetail" placeholder="Detail (e.g. Cleaner salary)" />
+          <input type="number" id="expenseAmount" placeholder="Amount" />
+          <button onclick="addExpense()">Add Expense</button>
+          <ul id="expenseList"></ul>
+        <ul id="expenseList"></ul>
+        <script>
+        // --- Firestore Expenses CRUD ---
+        async function getExpenses() {
+          const snapshot = await db.collection('expenses').get();
+          return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+
+        async function addExpense() {
+          const detail = document.getElementById('expenseDetail').value.trim();
+          const amount = document.getElementById('expenseAmount').value.trim();
+          if (!detail || !amount || isNaN(amount)) {
+            alert('Please enter a valid detail and amount.');
+            return;
+          }
+          await db.collection('expenses').add({ detail, amount: parseInt(amount), date: new Date().toISOString().slice(0,10) });
+          document.getElementById('expenseDetail').value = '';
+          document.getElementById('expenseAmount').value = '';
+          renderExpenseList();
+          updateDashboardSummary();
+        }
+
+        async function renderExpenseList() {
+          const expenses = await getExpenses();
+          const ul = document.getElementById('expenseList');
+          ul.innerHTML = expenses.map(e =>
+            `<li>₦${e.amount} - ${e.detail} <span style='color:#888;font-size:0.9em;'>(${e.date || ''})</span> <button onclick=\"deleteExpense('${e.id}')\" style='color:red;font-size:0.9em;'>Delete</button></li>`
+          ).join('') || '<li style="color:#888;">No expenses recorded.</li>';
+          // Update totalExpense
+          let total = 0;
+          expenses.forEach(e => { if (e.amount) total += Number(e.amount); });
+          document.getElementById('totalExpense').textContent = '₦' + total;
+          // Update balance
+          updateDashboardSummary();
+        }
+
+        async function deleteExpense(id) {
+          if (!confirm('Are you sure you want to delete this expense?')) return;
+          await db.collection('expenses').doc(id).delete();
+          renderExpenseList();
+          updateDashboardSummary();
+        }
+
+        // Render expenses on load
+        document.addEventListener('DOMContentLoaded', function() {
+          renderExpenseList();
+        });
+        </script>
+        </div>
+      </div>
+
+      <div id="workersDashboard" style="display:none;">
+        <h2>Workers Management</h2>
+        <form id="workerForm" onsubmit="saveWorker(event)" style="margin-bottom:20px;">
+          <input type="hidden" id="workerEditIndex" />
+          <input type="text" id="workerName" placeholder="Worker Name" required style="margin-bottom:5px;" />
+          <select id="workerType" required style="margin-bottom:5px;">
+            <option value="">Select Type</option>
+            <option value="Cleaner">Cleaner</option>
+            <option value="Security">Security</option>
+            <option value="Cook">Cook</option>
+            <option value="Other">Other</option>
+          </select>
+          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-bottom:5px;">
+            <input type="number" min="0" id="salaryJan" placeholder="Jan" />
+            <input type="number" min="0" id="salaryFeb" placeholder="Feb" />
+            <input type="number" min="0" id="salaryMar" placeholder="Mar" />
+            <input type="number" min="0" id="salaryApr" placeholder="Apr" />
+            <input type="number" min="0" id="salaryMay" placeholder="May" />
+            <input type="number" min="0" id="salaryJun" placeholder="Jun" />
+            <input type="number" min="0" id="salaryJul" placeholder="Jul" />
+            <input type="number" min="0" id="salaryAug" placeholder="Aug" />
+            <input type="number" min="0" id="salarySep" placeholder="Sep" />
+            <input type="number" min="0" id="salaryOct" placeholder="Oct" />
+            <input type="number" min="0" id="salaryNov" placeholder="Nov" />
+            <input type="number" min="0" id="salaryDec" placeholder="Dec" />
+          </div>
+          <button type="submit">Save</button>
+        </form>
+        <h3>Workers List</h3>
+        <table border="1" cellpadding="4" style="width:100%;margin-bottom:20px;">
+          <thead>
+            <tr>
+              <th>Name</th><th>Type</th>
+              <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+            </tr>
+          </thead>
+          <tbody id="workersTableBody"></tbody>
+        </table>
+        <h3>Monthly Summary</h3>
+        <table border="1" cellpadding="4" style="width:100%;margin-bottom:20px;">
+          <thead>
+            <tr><th>Month</th><th>Total Paid</th></tr>
+          </thead>
+          <tbody id="workersSummaryBody"></tbody>
+        </table>
+        <button onclick="downloadWorkersCSV()">Download CSV</button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // --- Hardcoded Role-Based Auth (before Firebase integration) ---
+    const ROLES = ["Managing Director", "Secretary", "CEO"];
+    const CREDENTIALS = {
+      "Managing Director": {
+        email: "Zainabnajjashihostel@gmail.com",
+        password: "z123456"
+      },
+      "Secretary": {
+        email: "Zainabnajjashihostel@gmail.com",
+        password: "z123456"
+      },
+      "CEO": {
+        email: "Zainabnajjashihostel",
+        password: "n123456"
+      }
+    };
+    let currentRole = null;
+    function login() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const role = document.getElementById('loginRole').value;
+      const errorDiv = document.getElementById('loginError');
+      errorDiv.textContent = '';
+      // Validation
+      if (!email || !password || !role) {
+        errorDiv.textContent = 'Please fill all fields and select your role.';
+        return;
+      }
+      if (!ROLES.includes(role)) {
+        errorDiv.textContent = 'Invalid role selected.';
+        return;
+      }
+      const creds = CREDENTIALS[role];
+      if (!creds || creds.email !== email || creds.password !== password) {
+        errorDiv.textContent = 'Invalid credentials or role. Please try again.';
+        document.getElementById('loginForm').classList.add('shake');
+        setTimeout(() => document.getElementById('loginForm').classList.remove('shake'), 400);
+        return;
+      }
+      // Success
+      currentRole = role;
+      localStorage.setItem('currentRole', role); // Persist login
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display = '';
+      // Set dynamic welcome text
+      const welcomeText = document.getElementById('welcomeText');
+      if (welcomeText) {
+        welcomeText.textContent = `WELCOME!!! ${role.toUpperCase()}`;
+      }
+      showNotification('Login successful', true);
+      applyRoleAccess(role);
+    }
+    function logout() {
+      currentRole = null;
+      localStorage.removeItem('currentRole'); // Remove persisted login
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('loginScreen').style.display = '';
+      showNotification('Logged out', false);
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginRole').value = '';
+      document.getElementById('loginError').textContent = '';
+      document.getElementById('viewOnlyBanner').style.display = 'none';
+      setViewOnlyMode(false);
+    }
+    function applyRoleAccess(role) {
+      if (role === 'CEO') {
+        document.getElementById('viewOnlyBanner').style.display = '';
+        setViewOnlyMode(true);
+      } else {
+        document.getElementById('viewOnlyBanner').style.display = 'none';
+        setViewOnlyMode(false);
+      }
+    }
+    // View-Only Mode disables all form inputs, buttons (except logout), and prevents editing
+    function setViewOnlyMode(enable) {
+      // Disable all inputs, selects, textareas, and buttons except logout
+      const dashboard = document.getElementById('dashboard');
+      if (!dashboard) return;
+      const allInputs = dashboard.querySelectorAll('input, select, textarea, button');
+      allInputs.forEach(el => {
+        if (el.classList.contains('logout-btn')) return;
+        if (enable) {
+          el.disabled = true;
+          el.style.opacity = 0.7;
+          el.style.pointerEvents = 'none';
+        } else {
+          el.disabled = false;
+          el.style.opacity = '';
+          el.style.pointerEvents = '';
+        }
+      });
+      // Allow search/filter fields and export buttons in view-only mode
+      if (enable) {
+        ['roomSearch','guardianTenantSearch'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) { el.disabled = false; el.style.opacity = ''; el.style.pointerEvents = ''; }
+        });
+        // Export buttons
+        ['exportPayments','exportExpenses','downloadWorkersCSV'].forEach(fn => {
+          const btns = Array.from(document.querySelectorAll('button')).filter(b => b.textContent && b.textContent.toLowerCase().includes(fn.replace('download','').replace('export','').toLowerCase()));
+          btns.forEach(b => { b.disabled = false; b.style.opacity = ''; b.style.pointerEvents = ''; });
+        });
+      }
+    }
+    // Add shake animation for error
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .shake { animation: shake 0.3s; }
+      @keyframes shake {
+        0% { transform: translateX(0); }
+        25% { transform: translateX(-8px); }
+        50% { transform: translateX(8px); }
+        75% { transform: translateX(-8px); }
+        100% { transform: translateX(0); }
+      }
+    `;
+    document.head.appendChild(style);
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBs3GM_q2LK85iRARPSpkQumLmC2eRRqPg",
+      authDomain: "zainab-najjashi-female-hostel.firebaseapp.com",
+      projectId: "zainab-najjashi-female-hostel",
+      storageBucket: "zainab-najjashi-female-hostel.firebasestorage.app",
+      messagingSenderId: "173036382503",
+      appId: "1:173036382503:web:09374c1b4ec207b458a102",
+      measurementId: "G-WK1CP9SZQ3"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+  <script>
+    // --- Automatic Backup & Restore ---
+    function getBackupData() {
+      // Firestore backup: fetch all collections
+      return (async () => {
+        const collections = [
+          'workers',
+          'scanDocs',
+          'roomPayments',
+          'guardians',
+          'tenantWaitingList',
+          'serviceProviders'
+        ];
+        const backup = {};
+        for (const col of collections) {
+          const snap = await db.collection(col).get();
+          backup[col] = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+        backup.backupTime = new Date().toISOString();
+        return backup;
+      })();
+    }
+    function autoDownloadBackup() {
+      getBackupData().then(data => {
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'hostel-manager-backup-' + new Date().toISOString().replace(/[:.]/g,'-') + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showNotification('Automatic backup downloaded.');
+      });
+    }
+    // Backup every 24 hours
+    setInterval(autoDownloadBackup, 24 * 60 * 60 * 1000);
+    // Remove automatic backup on logout; only backup on interval
+    // Notification
+    function showNotification(msg) {
+      let nc = document.getElementById('notification-container');
+      if (!nc) {
+        nc = document.createElement('div');
+        nc.id = 'notification-container';
+        nc.style.position = 'fixed';
+        nc.style.bottom = '24px';
+        nc.style.right = '24px';
+        nc.style.background = '#b08d57';
+        nc.style.color = '#fff';
+        nc.style.padding = '14px 22px';
+        nc.style.borderRadius = '8px';
+        nc.style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
+        nc.style.zIndex = 3000;
+        document.body.appendChild(nc);
+      }
+      nc.textContent = msg;
+      nc.style.display = 'block';
+      setTimeout(() => { nc.style.display = 'none'; }, 4000);
+    }
+
+    // Navigation logic for dashboard/workers
+    function showDashboard() {
+      document.getElementById('mainDashboard').style.display = '';
+      document.getElementById('workersDashboard').style.display = 'none';
+      document.getElementById('serviceProvidersDashboard').style.display = 'none';
+      document.getElementById('tenantWaitingListDashboard').style.display = 'none';
+      document.getElementById('guardianDashboard').style.display = 'none';
+    }
+    function showWorkers() {
+      document.getElementById('mainDashboard').style.display = 'none';
+      document.getElementById('workersDashboard').style.display = '';
+      document.getElementById('serviceProvidersDashboard').style.display = 'none';
+      document.getElementById('tenantWaitingListDashboard').style.display = 'none';
+      document.getElementById('guardianDashboard').style.display = 'none';
+      renderWorkersTable();
+      renderWorkersSummary();
+    }
+    function showServiceProviders() {
+      document.getElementById('mainDashboard').style.display = 'none';
+      document.getElementById('workersDashboard').style.display = 'none';
+      document.getElementById('serviceProvidersDashboard').style.display = '';
+      document.getElementById('tenantWaitingListDashboard').style.display = 'none';
+      document.getElementById('guardianDashboard').style.display = 'none';
+      renderServiceProvidersTable();
+    }
+    function showTenantWaitingList() {
+      document.getElementById('mainDashboard').style.display = 'none';
+      document.getElementById('workersDashboard').style.display = 'none';
+      document.getElementById('serviceProvidersDashboard').style.display = 'none';
+      document.getElementById('tenantWaitingListDashboard').style.display = '';
+      document.getElementById('guardianDashboard').style.display = 'none';
+      renderTenantWaitingTable();
+    }
+    function showGuardianSection() {
+      document.getElementById('mainDashboard').style.display = 'none';
+      document.getElementById('workersDashboard').style.display = 'none';
+      document.getElementById('serviceProvidersDashboard').style.display = 'none';
+      document.getElementById('tenantWaitingListDashboard').style.display = 'none';
+      document.getElementById('guardianDashboard').style.display = '';
+      renderGuardianRoomOptions();
+      renderGuardianTable();
+    }
+
+    // Workers data logic
+
+    // Service Provider Directory logic
+
+    // Tenant Waiting List logic
+
+    // Guardian Directory logic
+// --- Firestore Guardians CRUD ---
+async function getGuardians() {
+  const snapshot = await db.collection('guardians').get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+async function saveGuardian(e) {
+  e.preventDefault();
+  const room = document.getElementById('guardianRoom').value;
+  const guardianCount = getGuardianCountForRoom(room);
+  let guardians = [];
+  for (let i = 1; i <= guardianCount; i++) {
+    const tenantName = document.getElementById('tenantName'+i).value.trim();
+    const name = document.getElementById('guardianName'+i).value.trim();
+    const phone1 = document.getElementById('guardianPhone1_'+i).value.trim();
+    const phone2 = document.getElementById('guardianPhone2_'+i).value.trim();
+    const address = document.getElementById('guardianAddress'+i).value.trim();
+    if (!tenantName || !name || !phone1 || !address) {
+      alert('Please fill all required fields for Occupant ' + i);
+      return;
+    }
+    guardians.push({ tenantName, name, phone1, phone2, address });
+  }
+  const editIdx = document.getElementById('guardianEditIndex').value;
+  if (editIdx && editIdx.length > 0 && !isNaN(editIdx)) {
+    // If editIdx is a number, use index to find docId
+    const list = await getGuardians();
+    const docId = list[parseInt(editIdx)]?.id;
+    if (docId) {
+      await db.collection('guardians').doc(docId).set({ room, guardians });
+    }
+  } else if (editIdx && editIdx.length > 0) {
+    // If editIdx is a Firestore docId, use it directly
+    await db.collection('guardians').doc(editIdx).set({ room, guardians });
+  } else {
+    await db.collection('guardians').add({ room, guardians });
+  }
+  document.getElementById('guardianForm').reset();
+  document.getElementById('guardianEditIndex').value = "";
+  renderGuardianInputs();
+  renderGuardianTable();
+}
+async function renderGuardianTable() {
+  const list = await getGuardians();
+  const search = (document.getElementById('guardianTenantSearch')?.value || '').toLowerCase();
+  const tbody = document.getElementById('guardianTableBody');
+  let filtered = list;
+  if (search) {
+    filtered = list.filter(g => g.guardians.some(gu => gu.tenantName && gu.tenantName.toLowerCase().includes(search)));
+  }
+  tbody.innerHTML = filtered.map((g, idx) => {
+    let occ = g.guardians.length;
+    let guardiansHtml = g.guardians.map((gu, i) => {
+      let phone2Html = gu.phone2 ? ` / <a href='tel:${gu.phone2}' style='color:#b08d57;text-decoration:underline;'>${gu.phone2}</a>` : '';
+      return `<div style='margin-bottom:6px;'><strong>Tenant:</strong> ${gu.tenantName}<br><strong>Guardian:</strong> ${gu.name}<br>📞 <a href='tel:${gu.phone1}' style='color:#b08d57;text-decoration:underline;'>${gu.phone1}</a>${phone2Html}<br>🏠 ${gu.address}</div>`;
+    }).join("<hr style='margin:6px 0;'>");
+    return `<tr><td data-label='Room'>${g.room}</td><td data-label='Guardians' colspan='4'>${guardiansHtml}</td><td data-label='Occupants'>${occ}</td><td data-label='Action'><button onclick=\"editGuardian('${g.id}')\" style=\"color:#b08d57;\">Edit</button> <button onclick=\"removeGuardian('${g.id}')\" style=\"color:red;\">Delete</button></td></tr>`;
+  }).join('') || '<tr><td colspan="7" style="color:#888;">No guardians saved.</td></tr>';
+}
+async function removeGuardian(id) {
+  if (!confirm('Are you sure you want to delete this guardian?')) return;
+  await db.collection('guardians').doc(id).delete();
+  renderGuardianTable();
+}
+async function editGuardian(id) {
+  const list = await getGuardians();
+  const g = list.find(g => g.id === id);
+  document.getElementById('guardianEditIndex').value = id;
+  document.getElementById('guardianRoom').value = g.room;
+  renderGuardianInputs();
+  const count = getGuardianCountForRoom(g.room);
+  for (let i = 1; i <= count; i++) {
+    const gu = g.guardians[i-1] || {};
+    document.getElementById('tenantName'+i).value = gu.tenantName || '';
+    document.getElementById('guardianName'+i).value = gu.name || '';
+    document.getElementById('guardianPhone1_'+i).value = gu.phone1 || '';
+    document.getElementById('guardianPhone2_'+i).value = gu.phone2 || '';
+    document.getElementById('guardianAddress'+i).value = gu.address || '';
+  }
+}
+    function getGuardianCountForRoom(roomId) {
+      if (!roomId) return 1;
+      if (roomId.startsWith('Room of One')) return 1;
+      if (roomId.startsWith('Room of Two (VIP)')) return 2;
+      if (roomId.startsWith('Room of Two')) return 2;
+      if (roomId.startsWith('Room of Three')) return 3;
+      if (roomId.startsWith('Room of Four')) return 4;
+      return 1;
+    }
+    function renderGuardianInputs() {
+      const room = document.getElementById('guardianRoom').value;
+      const count = getGuardianCountForRoom(room);
+      const container = document.getElementById('guardianInputs');
+      let html = '';
+      for (let i = 1; i <= count; i++) {
+        html += `<div style='border:1px solid #e0cba7; border-radius:6px; padding:10px; margin-bottom:10px; background:#f9f6f1;'>`;
+        html += `<strong>Occupant ${i}</strong><br>`;
+        html += `<input type='text' id='tenantName${i}' placeholder='Tenant Name' required style='margin-bottom:5px; width:98%;' /><br>`;
+        html += `<strong>Guardian ${i}</strong><br>`;
+        html += `<input type='text' id='guardianName${i}' placeholder='Guardian Name' required style='margin-bottom:5px; width:98%;' /><br>`;
+        html += `<input type='text' id='guardianPhone1_${i}' placeholder='Phone Number 1' required style='margin-bottom:5px; width:98%;' /><br>`;
+        html += `<input type='text' id='guardianPhone2_${i}' placeholder='Phone Number 2 (optional)' style='margin-bottom:5px; width:98%;' /><br>`;
+        html += `<input type='text' id='guardianAddress${i}' placeholder='Address' required style='margin-bottom:5px; width:98%;' />`;
+        html += `</div>`;
+      }
+      container.innerHTML = html;
+    }
+    function renderGuardianRoomOptions() {
+      const select = document.getElementById('guardianRoom');
+      if (!select) return;
+      select.innerHTML = '<option value="">Select Room</option>';
+      rooms.forEach(room => {
+        select.innerHTML += `<option value="${room.id}">${room.id}</option>`;
+      });
+    }
+    // (Removed duplicate localStorage-based Guardian functions. Firestore versions are used below.)
+// Render on load
+document.addEventListener('DOMContentLoaded', function() {
+  renderGuardianRoomOptions();
+  renderGuardianInputs();
+  renderGuardianTable();
+});
+// --- Firestore Tenant Waiting List CRUD ---
+async function getTenantWaitingList() {
+  const snapshot = await db.collection('tenantWaitingList').get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+async function saveTenantWaiting(e) {
+  e.preventDefault();
+  const name = document.getElementById('waitingName').value.trim();
+  const phone = document.getElementById('waitingPhone').value.trim();
+  const room = document.getElementById('waitingRoom').value.trim();
+  const date = document.getElementById('waitingDate').value;
+  if (!name || !phone || !room || !date) {
+    alert('Please fill all fields.');
+    return;
+  }
+  const editIdx = document.getElementById('tenantWaitingEditIndex').value;
+  if (editIdx && !isNaN(editIdx)) {
+    // Use index to find the docId
+    const list = await getTenantWaitingList();
+    const docId = list[parseInt(editIdx)]?.id;
+    if (docId) {
+      await db.collection('tenantWaitingList').doc(docId).set({ name, phone, room, date });
+    }
+  } else if (editIdx && editIdx.length > 0) {
+    // If editIdx is a Firestore docId (from editTenantWaiting), use it directly
+    await db.collection('tenantWaitingList').doc(editIdx).set({ name, phone, room, date });
+  } else {
+    await db.collection('tenantWaitingList').add({ name, phone, room, date });
+  }
+  document.getElementById('tenantWaitingForm').reset();
+  document.getElementById('tenantWaitingEditIndex').value = "";
+  renderTenantWaitingTable();
+}
+async function renderTenantWaitingTable() {
+  const list = await getTenantWaitingList();
+  const tbody = document.getElementById('tenantWaitingTableBody');
+  tbody.innerHTML = list.map((t, idx) =>
+    `<tr><td data-label='Name'>${t.name}</td><td data-label='Phone Number'><a href='tel:${t.phone}' style='color:#b08d57;text-decoration:underline;'>${t.phone}</a></td><td data-label='Preferred Room'>${t.room}</td><td data-label='Application Date'>${t.date}</td><td data-label='Action'><button onclick=\"editTenantWaiting('${t.id}')\" style=\"color:#b08d57;\">Edit</button> <button onclick=\"removeTenantWaiting('${t.id}')\" style=\"color:red;\">Delete</button></td></tr>`
+  ).join('') || '<tr><td colspan="5" style="color:#888;">No waiting tenants.</td></tr>';
+}
+async function removeTenantWaiting(id) {
+  if (!confirm('Are you sure you want to delete this entry?')) return;
+  await db.collection('tenantWaitingList').doc(id).delete();
+  renderTenantWaitingTable();
+}
+async function editTenantWaiting(id) {
+  const list = await getTenantWaitingList();
+  const t = list.find(t => t.id === id);
+  document.getElementById('tenantWaitingEditIndex').value = id;
+  document.getElementById('waitingName').value = t.name;
+  document.getElementById('waitingPhone').value = t.phone;
+  document.getElementById('waitingRoom').value = t.room;
+  document.getElementById('waitingDate').value = t.date;
+}
+// Render on load
+document.addEventListener('DOMContentLoaded', function() {
+  renderTenantWaitingTable();
+});
+// --- Firestore Service Providers CRUD ---
+async function getServiceProviders() {
+  const snapshot = await db.collection('serviceProviders').get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+async function saveServiceProvider(e) {
+  e.preventDefault();
+  const name = document.getElementById('providerName').value.trim();
+  const phone = document.getElementById('providerPhone').value.trim();
+  const type = document.getElementById('providerType').value.trim();
+  if (!name || !phone || !type) {
+    alert('Please fill all fields.');
+    return;
+  }
+  const editIdx = document.getElementById('serviceProviderEditIndex').value;
+  if (editIdx && editIdx.length > 0 && !isNaN(editIdx)) {
+    // If editIdx is a number, use index to find docId
+    const providers = await getServiceProviders();
+    const docId = providers[parseInt(editIdx)]?.id;
+    if (docId) {
+      await db.collection('serviceProviders').doc(docId).set({ name, phone, type });
+    }
+  } else if (editIdx && editIdx.length > 0) {
+    // If editIdx is a Firestore docId, use it directly
+    await db.collection('serviceProviders').doc(editIdx).set({ name, phone, type });
+  } else {
+    await db.collection('serviceProviders').add({ name, phone, type });
+  }
+  document.getElementById('serviceProviderForm').reset();
+  document.getElementById('serviceProviderEditIndex').value = "";
+  renderServiceProvidersTable();
+}
+async function renderServiceProvidersTable() {
+  const providers = await getServiceProviders();
+  const tbody = document.getElementById('serviceProvidersTableBody');
+  tbody.innerHTML = providers.map((p, idx) =>
+    `<tr><td data-label='Name'>${p.name}</td><td data-label='Phone Number'><a href='tel:${p.phone}' style='color:#b08d57;text-decoration:underline;'>${p.phone}</a></td><td data-label='Type of Work'>${p.type}</td><td data-label='Action'><button onclick="editServiceProvider('${p.id}')" style="color:#b08d57;">Edit</button> <button onclick="removeServiceProvider('${p.id}')" style="color:red;">Delete</button></td></tr>`
+  ).join('') || '<tr><td colspan="4" style="color:#888;">No contacts saved.</td></tr>';
+}
+async function removeServiceProvider(id) {
+  if (!confirm('Are you sure you want to delete this contact?')) return;
+  await db.collection('serviceProviders').doc(id).delete();
+  renderServiceProvidersTable();
+}
+async function editServiceProvider(id) {
+  const providers = await getServiceProviders();
+  const p = providers.find(p => p.id === id);
+  document.getElementById('serviceProviderEditIndex').value = id;
+  document.getElementById('providerName').value = p.name;
+  document.getElementById('providerPhone').value = p.phone;
+  document.getElementById('providerType').value = p.type;
+}
+// Render on load
+document.addEventListener('DOMContentLoaded', function() {
+  renderServiceProvidersTable();
+});
+// --- Firestore Workers CRUD ---
+async function getWorkers() {
+  const snapshot = await db.collection('workers').get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+async function saveWorker(e) {
+  e.preventDefault();
+  const name = document.getElementById('workerName').value.trim();
+  const type = document.getElementById('workerType').value;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let hasAtLeastOne = false;
+  const salary = months.map((m) => {
+    const val = document.getElementById('salary'+m).value;
+    if (val && val !== "" && !isNaN(val)) hasAtLeastOne = true;
+    return val ? parseInt(val) : null;
+  });
+  if (!hasAtLeastOne) {
+    alert('Please enter at least one month salary.');
+    return;
+  }
+  const editIdx = document.getElementById('workerEditIndex').value;
+  if (editIdx && editIdx.length > 0 && !isNaN(editIdx)) {
+    // If editIdx is a number, use index to find docId
+    const workers = await getWorkers();
+    const docId = workers[parseInt(editIdx)]?.id;
+    if (docId) {
+      await db.collection('workers').doc(docId).set({ name, type, salary });
+    }
+  } else if (editIdx && editIdx.length > 0) {
+    // If editIdx is a Firestore docId, use it directly
+    await db.collection('workers').doc(editIdx).set({ name, type, salary });
+  } else {
+    await db.collection('workers').add({ name, type, salary });
+  }
+  document.getElementById('workerForm').reset();
+  document.getElementById('workerEditIndex').value = "";
+  renderWorkersTable();
+  renderWorkersSummary();
+}
+    async function renderWorkersTable() {
+      const workers = await getWorkers();
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const tbody = document.getElementById('workersTableBody');
+      tbody.innerHTML = workers.map((w, idx) => {
+        let tds = '';
+        for (let i = 0; i < months.length; i++) {
+          tds += `<td data-label='${months[i]}'>${w.salary[i] != null ? w.salary[i] : ''}</td>`;
+        }
+        return `<tr><td data-label='Name'>${w.name}</td><td data-label='Type'>${w.type}</td>${tds}<td data-label='Action'><button onclick=\"editWorker('${w.id}')\" style=\"color:#b08d57;\">Edit</button> <button onclick=\"removeWorker('${w.id}')\" style=\"color:red;\">Delete</button></td></tr>`;
+      }).join('') || '<tr><td colspan="15" style="color:#888;">No workers added.</td></tr>';
+    }
+async function renderWorkersSummary() {
+  const workers = await getWorkers();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const totals = Array(12).fill(0);
+  workers.forEach(w => w.salary.forEach((amt,i) => {
+    if (amt != null) totals[i] += amt;
+  }));
+  const tbody = document.getElementById('workersSummaryBody');
+  tbody.innerHTML = months.map((m,i) =>
+    `<tr><td>${m}</td><td>₦${totals[i]}</td></tr>`
+  ).join('');
+}
+async function downloadWorkersCSV() {
+  const workers = await getWorkers();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let csv = 'Name,Type,'+months.join(',')+'\n';
+  workers.forEach(w => {
+    let row = [w.name, w.type];
+    for (let i = 0; i < months.length; i++) {
+      row.push(w.salary[i] != null ? w.salary[i] : '');
+    }
+    csv += row.join(',')+'\n';
+  });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'workers.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+async function removeWorker(id) {
+  if (!confirm('Are you sure you want to remove this worker?')) return;
+  await db.collection('workers').doc(id).delete();
+  renderWorkersTable();
+  renderWorkersSummary();
+}
+async function editWorker(id) {
+  const workers = await getWorkers();
+  const w = workers.find(w => w.id === id);
+  document.getElementById('workerEditIndex').value = id;
+  document.getElementById('workerName').value = w.name;
+  document.getElementById('workerType').value = w.type;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  for (let i = 0; i < months.length; i++) {
+    document.getElementById('salary'+months[i]).value = w.salary[i] != null ? w.salary[i] : '';
+  }
+}
+// Only show dashboard if logged in (currentRole is set)
+// Ensure this is the very first DOMContentLoaded listener
+document.addEventListener('DOMContentLoaded', checkLoginOnLoad, { once: true });
+function checkLoginOnLoad() {
+  const savedRole = localStorage.getItem('currentRole');
+  if (savedRole && ROLES.includes(savedRole)) {
+    currentRole = savedRole;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display = '';
+    const welcomeText = document.getElementById('welcomeText');
+    if (welcomeText) {
+      welcomeText.textContent = `WELCOME!!! ${savedRole.toUpperCase()}`;
+    }
+    applyRoleAccess(savedRole);
+  } else {
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('loginScreen').style.display = '';
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginRole').value = '';
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('viewOnlyBanner').style.display = 'none';
+    setViewOnlyMode(false);
+    currentRole = null;
+  }
+}
+  </script>
+  <script>
+    // Document upload logic
+    // --- Firestore Document Upload ---
+    async function uploadDocument() {
+      const fileInput = document.getElementById('docFile');
+      const descInput = document.getElementById('docDesc');
+      const status = document.getElementById('uploadStatus');
+      if (!fileInput.files[0]) {
+        status.style.color = 'red';
+        status.textContent = 'Please select a file.';
+        return;
+      }
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        await db.collection('scanDocs').add({
+          name: file.name,
+          desc: descInput.value,
+          data: e.target.result,
+          type: file.type,
+          date: new Date().toISOString().slice(0, 10)
+        });
+        status.style.color = 'green';
+        status.textContent = 'Uploaded!';
+        fileInput.value = '';
+        descInput.value = '';
+        renderUploadedDocs();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function renderUploadedDocs() {
+      const snapshot = await db.collection('scanDocs').get();
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const ul = document.getElementById('uploadedDocs');
+      ul.innerHTML = docs.map((doc) =>
+        `<li><a href="${doc.data}" download="${doc.name}" target="_blank">${doc.name}</a> ${doc.desc ? ' - ' + doc.desc : ''} <span style='color:#888;font-size:0.9em;'>(${doc.date})</span> <button onclick="deleteDoc('${doc.id}')" style='color:red;font-size:0.9em;'>Delete</button></li>`
+      ).join('') || '<li style="color:#888;">No documents uploaded.</li>';
+    }
+
+    async function deleteDoc(id) {
+      await db.collection('scanDocs').doc(id).delete();
+      renderUploadedDocs();
+    }
+
+    // Show uploaded docs when modal opens
+    document.addEventListener('DOMContentLoaded', function() {
+      renderUploadedDocs();
+    });
+    // Also re-render when modal is opened
+    document.getElementById('uploadModal').addEventListener('click', function(e) {
+      if (e.target === this) this.style.display = 'none';
+    });
+  </script>
+  <script>
+    const roomData = [
+      { type: "Room of One", count: 4, price: 1000000 },
+      { type: "Room of Two", count: 66, price: 950000 },
+      { type: "Room of Two (VIP)", count: 8, price: 1400000 },
+      { type: "Room of Three", count: 1, price: 900000 },
+      { type: "Room of Four", count: 1, price: 900000 }
+    ];
+
+    let rooms = [];
+    roomData.forEach(group => {
+      for (let i = 1; i <= group.count; i++) {
+        rooms.push({
+          id: `${group.type}-${i}`,
+          number: i,
+          type: group.type,
+          price: group.price,
+          tenant: null
+        });
+      }
+    });
+
+    // --- Firestore Room Payments ---
+    function renderRooms(list = rooms) {
+      const roomList = document.getElementById("roomList");
+      roomList.innerHTML = list.map(room => `
+        <div class="room-card ${room.tenant ? 'occupied' : 'available'}">
+          <h4>${room.type} (${room.number})</h4>
+          <p>₦${room.price}</p>
+          <p>${room.tenant ? `🔴 Occupied by ${room.tenant.name} — Paid ₦${room.tenant.amount} on ${room.tenant.date}` : "🟢 Available"}</p>
+          <button onclick='editRoom("${room.id}")'>${room.tenant ? "Update" : "Name of Student"}</button>
+${room.tenant ? `<button onclick='resetRoom("${room.id}")' style="margin-top:5px; background:red;">Reset</button>` : ""}
+        </div>
+      `).join("");
+      updateDashboardSummary();
+    }
+
+    async function editRoom(id) {
+      const room = rooms.find(r => r.id === id);
+      const name = prompt("Tenant name:", room.tenant?.name || "");
+      const amount = prompt("Amount paid:", room.tenant?.amount || room.price);
+      const date = prompt("Date paid (YYYY-MM-DD):", room.tenant?.date || new Date().toISOString().slice(0,10));
+      if (name && amount && date) {
+        room.tenant = { name, amount: parseInt(amount), date };
+        await db.collection('roomPayments').doc(room.id).set({ ...room });
+        renderRooms();
+        updateDashboardSummary();
+      }
+    }
+
+    async function resetRoom(id) {
+      if (!confirm('Are you sure you want to reset this room?')) return;
+      const room = rooms.find(r => r.id === id);
+      room.tenant = null;
+      await db.collection('roomPayments').doc(room.id).set({ ...room });
+      renderRooms();
+      updateDashboardSummary();
+    }
+
+
+
+    async function loadRooms() {
+      const snapshot = await db.collection('roomPayments').get();
+      // Always reset rooms to default, then apply Firestore data
+      rooms.forEach(r => {
+        r.tenant = null;
+      });
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const room = rooms.find(r => r.id === doc.id);
+        if (room) {
+          // Merge all properties from Firestore into the local room object
+          Object.keys(data).forEach(key => {
+            room[key] = data[key];
+          });
+        }
+      });
+      updateDashboardSummary();
+    }
+    // --- Dashboard Summary Update --- 
+    function updateDashboardSummary() {
+      // Calculate total income from all rooms with tenants
+      let totalIncome = 0;
+      rooms.forEach(room => {
+        if (room.tenant && room.tenant.amount) {
+          totalIncome += Number(room.tenant.amount);
+        }
+      });
+      document.getElementById('totalIncome').textContent = '₦' + totalIncome;
+      // Calculate total expenses from totalExpense span
+      const expenseText = document.getElementById('totalExpense').textContent.replace(/[^\d]/g, '');
+      const totalExpense = parseInt(expenseText) || 0;
+      document.getElementById('balance').textContent = '₦' + (totalIncome - totalExpense);
+    }
+
+    function filterRooms() {
+      const q = document.getElementById("roomSearch").value.toLowerCase();
+      renderRooms(rooms.filter(r =>
+        r.id.toLowerCase().includes(q) ||
+        r.type.toLowerCase().includes(q) ||
+        (r.tenant && r.tenant.name.toLowerCase().includes(q))
+      ));
+    }
+
+    // Removed unused function: filterGuardiansByTenant
+
+    // On load, fetch rooms from Firestore
+    (async function() {
+      await loadRooms();
+      renderRooms();
+      // updateDashboardSummary() is called inside loadRooms and renderRooms
+    })();
+  </script>
+  <div id="notification-container"></div>
+
+</body>
+</html>
